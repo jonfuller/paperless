@@ -28,7 +28,22 @@ namespace Paperless
                                       {"date", date},
                                       {"original_filename", Path.GetFileName(originalFilename)},
                                       {"content", new Binary( content.ToArray())}
-                                  });
+                                  } );
+        }
+
+        public IEnumerable<Tuple<string, int>> GetTags()
+        {
+            var tags = _database
+                .GetCollection( "docs" )
+                .Find( new Document(), 0, 0, new Document() { { "tags", "" } } )
+                .Documents
+                .Map( d => d["tags"] as IEnumerable<string> )
+                .Flatten()
+                .GroupBy( tag => tag )
+                .Map( grp => new Tuple<string, int>() { First = grp.Key, Second = grp.Count() } )
+                .ToList();
+
+            return tags;
         }
 
         public void Dispose()
