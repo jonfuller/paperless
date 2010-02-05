@@ -33,17 +33,26 @@ namespace Paperless
 
         public IEnumerable<Tuple<string, int>> GetTags()
         {
-            var tags = _database
+            return _database
                 .GetCollection( "docs" )
-                .Find( new Document(), 0, 0, new Document() { { "tags", "" } } )
+                .Find( new Document(), 0, 0, new Document() { { "tags", true } } )
                 .Documents
                 .Map( d => d["tags"] as IEnumerable<string> )
                 .Flatten()
                 .GroupBy( tag => tag )
                 .Map( grp => new Tuple<string, int>() { First = grp.Key, Second = grp.Count() } )
-                .ToList();
+                .Evaluate();
+        }
 
-            return tags;
+        public IEnumerable<IEnumerable<byte>> SearchForTag( IEnumerable<string> tags )
+        {
+            return tags
+                .Map( tag => _database.GetCollection( "docs" ).Find( new Document().Append( "tags", tag ) ).Documents )
+                .Flatten()
+                .GroupBy( document => document["_id"] )
+                .Map( group => (group.First()["content"] as Binary).Bytes )
+                .Cast<IEnumerable<byte>>()
+                .Evaluate();
         }
 
         public void Dispose()
