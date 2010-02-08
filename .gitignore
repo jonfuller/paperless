@@ -5,3 +5,4 @@ Release
 _ReSharper*
 db/
 *.bak
+*.user
